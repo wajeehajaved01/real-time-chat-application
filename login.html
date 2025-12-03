@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Login</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="/eel.js"></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="logo">
+                <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                    <circle cx="30" cy="30" r="28" stroke="#4CAF50" stroke-width="3"/>
+                    <path d="M20 30 L28 38 L42 20" stroke="#4CAF50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h1>Multi-Threaded Chat</h1>
+            <p class="subtitle">Connect and Chat in Real-Time</p>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        placeholder="Enter your username" 
+                        required 
+                        minlength="3"
+                        maxlength="20"
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <div class="input-group">
+                    <label for="serverHost">Server Host</label>
+                    <input 
+                        type="text" 
+                        id="serverHost" 
+                        value="127.0.0.1" 
+                        placeholder="127.0.0.1"
+                        required
+                    >
+                </div>
+                
+                <div class="input-group">
+                    <label for="serverPort">Server Port</label>
+                    <input 
+                        type="number" 
+                        id="serverPort" 
+                        value="5555" 
+                        placeholder="5555"
+                        required
+                        min="1024"
+                        max="65535"
+                    >
+                </div>
+                
+                <button type="submit" class="btn-primary" id="connectBtn">
+                    <span>Connect</span>
+                </button>
+                
+                <div id="errorMessage" class="error-message"></div>
+            </form>
+            
+            <div class="status" id="statusIndicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Ready to connect</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const host = document.getElementById('serverHost').value.trim();
+            const port = parseInt(document.getElementById('serverPort').value);
+            
+            const connectBtn = document.getElementById('connectBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const statusIndicator = document.getElementById('statusIndicator');
+            
+            // Clear previous errors
+            errorMessage.textContent = '';
+            errorMessage.style.display = 'none';
+            
+            // Disable button and show loading
+            connectBtn.disabled = true;
+            connectBtn.innerHTML = '<span>Connecting...</span>';
+            statusIndicator.querySelector('.status-text').textContent = 'Connecting to server...';
+            statusIndicator.classList.add('connecting');
+            
+            try {
+                // Call Python function to connect
+                const result = await eel.connect_to_server(username, host, port)();
+                
+                if (result.success) {
+                    statusIndicator.querySelector('.status-text').textContent = 'Connected!';
+                    statusIndicator.classList.remove('connecting');
+                    statusIndicator.classList.add('connected');
+                    
+                    // Redirect to chat page
+                    setTimeout(() => {
+                        window.location.href = 'chat.html';
+                    }, 500);
+                } else {
+                    throw new Error(result.message || 'Connection failed');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message || 'Failed to connect to server';
+                errorMessage.style.display = 'block';
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = '<span>Connect</span>';
+                statusIndicator.querySelector('.status-text').textContent = 'Connection failed';
+                statusIndicator.classList.remove('connecting');
+                statusIndicator.classList.add('error');
+                
+                setTimeout(() => {
+                    statusIndicator.classList.remove('error');
+                    statusIndicator.querySelector('.status-text').textContent = 'Ready to connect';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
